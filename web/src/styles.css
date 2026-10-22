@@ -1,0 +1,30 @@
+:root {
+  --bg: #f6f7f9; --card: #fff; --text: #1d2330; --muted: #6b7280; --line: #e5e7eb;
+  --accent: #2f5bea; --high: #d64545; --medium: #d9911a; --low: #3c9a5f;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text); background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #11141b; --card: #1a1f29; --text: #e8eaf0; --muted: #9aa3b2; --line: #2a3140; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); }
+.app { max-width: 760px; margin: 0 auto; padding: 32px 16px; }
+header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+h1 { margin: 0 0 16px; font-size: 1.8rem; }
+.stats { display: flex; gap: 16px; list-style: none; padding: 0; margin: 0; color: var(--muted); }
+.stats strong { color: var(--text); }
+input, select, button { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+button { background: var(--accent); color: #fff; border: none; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+button.icon { background: transparent; color: var(--muted); }
+.task-form, .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.task-form input[aria-label="Task title"], .filters input { flex: 1 1 200px; }
+.tasks { list-style: none; padding: 0; display: grid; gap: 8px; }
+.task { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.task--done .task__title { text-decoration: line-through; color: var(--muted); }
+.task__body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.task__meta { font-size: .85rem; color: var(--muted); }
+.overdue { color: var(--high); font-weight: 600; }
+.badge { font-size: .75rem; text-transform: uppercase; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: #fff; }
+.badge--high { background: var(--high); } .badge--medium { background: var(--medium); } .badge--low { background: var(--low); }
+.error { color: var(--high); } .empty { color: var(--muted); }

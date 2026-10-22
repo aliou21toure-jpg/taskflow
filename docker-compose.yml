@@ -1,0 +1,36 @@
+# Full stack locally:  docker compose up --build
+#   web → http://localhost:5173   api → http://localhost:3000
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow
+      POSTGRES_DB: taskflow
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./api/docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgres://taskflow:taskflow@db:5432/taskflow
+      CORS_ORIGIN: http://localhost:5173
+    ports: ["3000:3000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    build:
+      context: ./web
+      args: { VITE_API_URL: http://localhost:3000 }
+    ports: ["5173:80"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
