@@ -4,6 +4,8 @@
 
 A full-stack task manager: a **TypeScript + Express REST API** backed by **PostgreSQL**, and a **React** frontend.
 
+![TaskFlow running locally: tasks with priorities, assignees, due dates and status counts](docs/screenshot.png)
+
 ## Features
 
 - CRUD REST API for tasks: status, priority, assignee, due date
