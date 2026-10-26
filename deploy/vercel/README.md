@@ -6,7 +6,7 @@ means the session cookie is first-party, `SameSite=Lax` blocks cross-site reques
 CORS configuration is needed.
 
 ```bash
-./deploy/vercel/prepare.sh      # assembles .vercel-build/ from api/src and web/
+sh deploy/vercel/prepare.sh      # assembles .vercel-build/ from api/src and web/
 cd .vercel-build
 vercel deploy --prod
 ```
