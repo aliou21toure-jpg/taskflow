@@ -1,5 +1,5 @@
 # Full stack locally:  docker compose up --build
-#   web → http://localhost:5173   api → http://localhost:3000
+#   app → http://localhost:5173 (nginx serves the UI and proxies /api to the API)
 services:
   db:
     image: postgres:16-alpine
@@ -20,15 +20,14 @@ services:
     build: ./api
     environment:
       DATABASE_URL: postgres://taskflow:taskflow@db:5432/taskflow
-      CORS_ORIGIN: http://localhost:5173
+      # Plain HTTP on localhost; set to true (the production default) behind HTTPS.
+      COOKIE_SECURE: "false"
     ports: ["3000:3000"]
     depends_on:
       db: { condition: service_healthy }
 
   web:
-    build:
-      context: ./web
-      args: { VITE_API_URL: http://localhost:3000 }
+    build: ./web
     ports: ["5173:80"]
     depends_on: [api]
 
