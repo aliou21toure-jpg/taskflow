@@ -23,6 +23,14 @@ export interface TaskList {
 export type NewTask = Pick<Task, "title" | "priority"> &
   Partial<Pick<Task, "description" | "assignee" | "due_date" | "status">>;
 
+export type TaskPatch = Partial<Pick<Task, "title" | "description" | "status" | "priority" | "assignee" | "due_date">>;
+
+export interface User {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
 export const STATUS_LABELS: Record<TaskStatus, string> = {
   todo: "To do",
   in_progress: "In progress",

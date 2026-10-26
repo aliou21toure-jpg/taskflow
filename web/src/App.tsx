@@ -1,109 +1,91 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, type ListParams } from "./api";
-import { TaskForm } from "./components/TaskForm";
-import { TaskItem } from "./components/TaskItem";
-import { STATUS_LABELS, type NewTask, type Task, type TaskStatus } from "./types";
+import { api, ApiError, type Credentials } from "./api";
+import { AuthForm } from "./components/AuthForm";
+import { TaskBoard } from "./components/TaskBoard";
+import type { User } from "./types";
+
+type AuthState =
+  | { status: "checking" }
+  | { status: "signedOut"; notice?: string }
+  | { status: "unreachable"; message: string }
+  | { status: "signedIn"; user: User };
+
+const env = import.meta.env;
+const demo: Credentials | undefined =
+  env.VITE_DEMO_EMAIL && env.VITE_DEMO_PASSWORD
+    ? { email: env.VITE_DEMO_EMAIL, password: env.VITE_DEMO_PASSWORD }
+    : undefined;
 
 export default function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [stats, setStats] = useState<Record<TaskStatus, number>>({ todo: 0, in_progress: 0, done: 0 });
-  const [filters, setFilters] = useState<ListParams>({ status: "", q: "", sort: "created_at" });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [auth, setAuth] = useState<AuthState>({ status: "checking" });
 
-  const load = useCallback(async () => {
+  // On load, ask the server who we are. The session lives in an HttpOnly cookie that
+  // this code cannot read, which is the point: only the server can tell.
+  const checkSession = useCallback(async () => {
+    setAuth({ status: "checking" });
     try {
-      const [list, s] = await Promise.all([api.list(filters), api.stats()]);
-      setTasks(list.items);
-      setStats(s);
-      setError(null);
+      setAuth({ status: "signedIn", user: await api.me() });
     } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
+      if (e instanceof ApiError && e.status === 401) setAuth({ status: "signedOut" });
+      else setAuth({ status: "unreachable", message: (e as Error).message });
     }
-  }, [filters]);
+  }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void checkSession();
+  }, [checkSession]);
 
-  // Wrap every mutation the same way: run it, surface errors, then refresh.
-  const mutate = (fn: () => Promise<unknown>) => async () => {
-    try {
-      await fn();
-      await load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
+  const handleSessionExpired = useCallback(
+    () => setAuth({ status: "signedOut", notice: "Your session has ended. Please sign in again." }),
+    [],
+  );
 
-  const handleCreate = async (task: NewTask) => mutate(() => api.create(task))();
-  const handleStatus = (id: string, status: TaskStatus) => void mutate(() => api.update(id, { status }))();
-  const handleDelete = (id: string) => void mutate(() => api.remove(id))();
+  if (auth.status === "checking") {
+    return (
+      <main className="auth">
+        <p role="status" className="loading">
+          Loading…
+        </p>
+      </main>
+    );
+  }
+
+  if (auth.status === "unreachable") {
+    return (
+      <main className="auth">
+        <h1>TaskFlow</h1>
+        <div role="alert" className="error banner">
+          <span>{auth.message}</span>
+          <button type="button" className="secondary" onClick={() => void checkSession()}>
+            Retry
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (auth.status === "signedOut") {
+    return (
+      <AuthForm
+        notice={auth.notice}
+        demo={demo}
+        onSubmit={async (mode, credentials) => {
+          const user = mode === "login" ? await api.login(credentials) : await api.register(credentials);
+          setAuth({ status: "signedIn", user });
+        }}
+      />
+    );
+  }
 
   return (
-    <main className="app">
-      <header>
-        <h1>TaskFlow</h1>
-        <ul className="stats" aria-label="Task counts">
-          {(Object.keys(STATUS_LABELS) as TaskStatus[]).map((s) => (
-            <li key={s}>
-              <strong>{stats[s]}</strong> {STATUS_LABELS[s]}
-            </li>
-          ))}
-        </ul>
-      </header>
-
-      <TaskForm onCreate={handleCreate} />
-
-      <div className="filters">
-        <input
-          aria-label="Search"
-          placeholder="Search…"
-          value={filters.q}
-          onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
-        />
-        <select
-          aria-label="Filter by status"
-          value={filters.status}
-          onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value as TaskStatus | "" }))}
-        >
-          <option value="">All statuses</option>
-          {Object.entries(STATUS_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Sort by"
-          value={filters.sort}
-          onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as ListParams["sort"] }))}
-        >
-          <option value="created_at">Newest</option>
-          <option value="priority">Priority</option>
-          <option value="due_date">Due date</option>
-        </select>
-      </div>
-
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
-      )}
-
-      {loading ? (
-        <p>Loading…</p>
-      ) : tasks.length === 0 ? (
-        <p className="empty">No tasks yet. Add one above.</p>
-      ) : (
-        <ul className="tasks">
-          {tasks.map((t) => (
-            <TaskItem key={t.id} task={t} onStatusChange={handleStatus} onDelete={handleDelete} />
-          ))}
-        </ul>
-      )}
-    </main>
+    <TaskBoard
+      key={auth.user.id}
+      user={auth.user}
+      onSessionExpired={handleSessionExpired}
+      onLogout={async () => {
+        await api.logout();
+        setAuth({ status: "signedOut", notice: "You're signed out." });
+      }}
+    />
   );
 }
