@@ -25,16 +25,19 @@ const SORT_SQL: Record<ListTasksQuery["sort"], string> = {
 /**
  * All SQL for tasks lives here. Every value goes through a $n placeholder,
  * so user input is always sent to PostgreSQL as data, never as SQL.
+ * Every method takes the owner's id and every statement filters on user_id,
+ * so ownership is enforced in the query itself, not checked afterwards.
  */
 export class TaskRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: CreateTaskInput): Promise<Task> {
+  async create(userId: string, input: CreateTaskInput): Promise<Task> {
     const { rows } = await this.db.query<Task>(
-      `INSERT INTO tasks (title, description, status, priority, assignee, due_date)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO tasks (user_id, title, description, status, priority, assignee, due_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING ${COLUMNS}`,
       [
+        userId,
         input.title,
         input.description ?? null,
         input.status,
@@ -46,9 +49,9 @@ export class TaskRepository {
     return rows[0]!;
   }
 
-  async list(q: ListTasksQuery): Promise<{ items: Task[]; total: number }> {
-    const where: string[] = [];
-    const params: unknown[] = [];
+  async list(userId: string, q: ListTasksQuery): Promise<{ items: Task[]; total: number }> {
+    const where: string[] = ["user_id = $1"];
+    const params: unknown[] = [userId];
     const add = (sql: string, value: unknown) => {
       params.push(value);
       where.push(sql.replace("?", `$${params.length}`));
@@ -63,7 +66,7 @@ export class TaskRepository {
       where.push(`(title ILIKE ${n} OR description ILIKE ${n})`);
     }
 
-    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const whereSql = `WHERE ${where.join(" AND ")}`;
     const orderSql = `${SORT_SQL[q.sort]} ${q.order === "asc" ? "ASC" : "DESC"} NULLS LAST, id`;
 
     const total = await this.db.query<{ count: string }>(
@@ -79,12 +82,15 @@ export class TaskRepository {
     return { items: items.rows, total: Number(total.rows[0]!.count) };
   }
 
-  async findById(id: string): Promise<Task | null> {
-    const { rows } = await this.db.query<Task>(`SELECT ${COLUMNS} FROM tasks WHERE id = $1`, [id]);
+  async findById(userId: string, id: string): Promise<Task | null> {
+    const { rows } = await this.db.query<Task>(
+      `SELECT ${COLUMNS} FROM tasks WHERE id = $1 AND user_id = $2`,
+      [id, userId],
+    );
     return rows[0] ?? null;
   }
 
-  async update(id: string, patch: UpdateTaskInput): Promise<Task | null> {
+  async update(userId: string, id: string, patch: UpdateTaskInput): Promise<Task | null> {
     const allowed = ["title", "description", "status", "priority", "assignee", "due_date"] as const;
     const sets: string[] = [];
     const params: unknown[] = [];
@@ -94,22 +100,28 @@ export class TaskRepository {
         sets.push(`${key} = $${params.length}`);
       }
     }
-    params.push(id);
+    params.push(id, userId);
     const { rows } = await this.db.query<Task>(
-      `UPDATE tasks SET ${sets.join(", ")} WHERE id = $${params.length} RETURNING ${COLUMNS}`,
+      `UPDATE tasks SET ${sets.join(", ")}
+       WHERE id = $${params.length - 1} AND user_id = $${params.length}
+       RETURNING ${COLUMNS}`,
       params,
     );
     return rows[0] ?? null;
   }
 
-  async delete(id: string): Promise<boolean> {
-    const { rowCount } = await this.db.query("DELETE FROM tasks WHERE id = $1", [id]);
+  async delete(userId: string, id: string): Promise<boolean> {
+    const { rowCount } = await this.db.query("DELETE FROM tasks WHERE id = $1 AND user_id = $2", [
+      id,
+      userId,
+    ]);
     return (rowCount ?? 0) > 0;
   }
 
-  async stats(): Promise<Record<Task["status"], number>> {
+  async stats(userId: string): Promise<Record<Task["status"], number>> {
     const { rows } = await this.db.query<{ status: Task["status"]; count: string }>(
-      "SELECT status, count(*) FROM tasks GROUP BY status",
+      "SELECT status, count(*) FROM tasks WHERE user_id = $1 GROUP BY status",
+      [userId],
     );
     const out = { todo: 0, in_progress: 0, done: 0 };
     for (const r of rows) out[r.status] = Number(r.count);
