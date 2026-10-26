@@ -5,7 +5,7 @@
 
 A full-stack task manager with user accounts: a **TypeScript + Express REST API** on
 **PostgreSQL** and a **React** frontend. Every user signs in and sees only their own tasks.
-The API enforces this in every SQL query, and 86 automated tests check it.
+The API enforces this in every SQL query, and 89 automated tests check it.
 
 **[Try the live demo →](https://taskflow-demo-tau.vercel.app)** Create your own account, or
 click *Try the demo account* on the sign-in screen.
@@ -125,7 +125,7 @@ on Supabase.
 ## Tests
 
 ```bash
-cd api && npm test        # 68 integration tests against a real PostgreSQL test database
+cd api && npm test        # 71 integration tests against a real PostgreSQL test database
 cd web && npm test        # 18 React tests against an in-memory fake API
 ```
 
@@ -135,6 +135,7 @@ cd web && npm test        # 18 React tests against an in-memory fake API
 | Authorization | `401` on every task endpoint without a session. Another user can't read, list, search, update or delete your tasks, or create one in your name. Database-level owner constraint and cascade |
 | CSRF | A write from another origin is refused; one from the app's own origin is allowed |
 | Tasks | CRUD, validation, unknown-field rejection, filters, search with literal wildcards, sorting, pagination |
+| Migrations | `002` adds ownership without data loss: on a database whose tasks have no owner it stops and rolls back instead of deleting them |
 | Frontend | Sign-in and sign-up flows and errors, sign-out, session expiry, unreachable server, failed create, edit and delete (the form keeps your input), editing every field, debounced search |
 
 The API tests refuse to run unless `DATABASE_URL` points at a database whose name ends in

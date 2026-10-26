@@ -25,10 +25,20 @@ CREATE INDEX IF NOT EXISTS sessions_expires_idx ON sessions (expires_at);
 -- Every task belongs to exactly one user.
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users (id) ON DELETE CASCADE;
 
--- Tasks created before accounts existed have no owner, so no one could ever reach
--- them through the API. Remove them so the column can be made mandatory.
--- (To keep old rows instead, assign them to a user before running this migration.)
-DELETE FROM tasks WHERE user_id IS NULL;
+-- Tasks created before accounts existed have no owner. This migration never deletes
+-- them: if any exist it stops (and the whole migration rolls back), so you can decide
+-- who owns them first, for example:
+--   INSERT INTO users (email, password_hash) VALUES ('you@example.com', '<argon2id hash>');
+--   UPDATE tasks SET user_id = (SELECT id FROM users WHERE email = 'you@example.com');
+-- then run the migration again. A fresh database has no tasks, so it passes straight through.
+DO $$
+DECLARE orphans bigint;
+BEGIN
+  SELECT count(*) INTO orphans FROM tasks WHERE user_id IS NULL;
+  IF orphans > 0 THEN
+    RAISE EXCEPTION '% existing task(s) have no owner. Assign them to a user (see comments in 002_users_sessions.sql) and re-run the migration. Nothing was changed.', orphans;
+  END IF;
+END $$;
 ALTER TABLE tasks ALTER COLUMN user_id SET NOT NULL;
 
 -- Every query filters by owner first; these indexes serve the list and stats queries.
