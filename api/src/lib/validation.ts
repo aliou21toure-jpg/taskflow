@@ -39,8 +39,30 @@ export const ListTasksQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254)
+  .pipe(z.email("Enter a valid email address"));
+
+export const RegisterSchema = z.strictObject({
+  email,
+  // Length is the strongest rule (NIST SP 800-63B); the upper bound caps hashing cost.
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password must be at most 128 characters"),
+});
+
+export const LoginSchema = z.strictObject({
+  email,
+  password: z.string().min(1, "password is required").max(128),
+});
+
 export const TaskIdSchema = z.uuid("id must be a valid UUID");
 
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof UpdateTaskSchema>;
+export type Credentials = z.infer<typeof LoginSchema>;
 export type ListTasksQuery = z.infer<typeof ListTasksQuerySchema>;

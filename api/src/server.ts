@@ -4,7 +4,16 @@ import { createPool } from "./db.js";
 
 const config = loadConfig();
 const pool = createPool(config.DATABASE_URL);
-const app = createApp({ db: pool, corsOrigin: config.CORS_ORIGIN, logLevel: config.LOG_LEVEL });
+const app = createApp({
+  db: pool,
+  logLevel: config.LOG_LEVEL,
+  cookieSecure: config.COOKIE_SECURE,
+  sessionTtlHours: config.SESSION_TTL_HOURS,
+  authRateLimit: config.AUTH_RATE_LIMIT,
+});
+// Behind a reverse proxy (nginx, a PaaS load balancer) trust its X-Forwarded-* headers,
+// so req.ip (rate limiting) and req.protocol (origin check) are correct.
+app.set("trust proxy", 1);
 
 const server = app.listen(config.PORT, () => {
   console.log(`TaskFlow API listening on http://localhost:${config.PORT}`);

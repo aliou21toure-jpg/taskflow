@@ -3,11 +3,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# Vite inlines env vars at build time, so the API URL is a build argument.
-ARG VITE_API_URL=http://localhost:3000
-ENV VITE_API_URL=$VITE_API_URL
+# The app calls the API at /api on its own origin; nginx forwards it (see nginx.conf).
 RUN npm run build
 
 FROM nginx:1.27-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
