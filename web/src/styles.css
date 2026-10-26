@@ -28,3 +28,33 @@ button.icon { background: transparent; color: var(--muted); }
 .badge { font-size: .75rem; text-transform: uppercase; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: #fff; }
 .badge--high { background: var(--high); } .badge--medium { background: var(--medium); } .badge--low { background: var(--low); }
 .error { color: var(--high); } .empty { color: var(--muted); }
+textarea { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); width: 100%; resize: vertical; }
+button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+button.link { background: none; border: none; padding: 0; color: var(--accent); text-decoration: underline; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.task-form { flex-direction: column; align-items: stretch; }
+.task-form button[type="submit"] { align-self: flex-start; }
+.task-form__row, .edit-form__row, .edit-form__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.task-form__row input[aria-label="Task title"] { flex: 1 1 200px; }
+.task__desc { font-size: .9rem; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.task__title { overflow-wrap: anywhere; }
+.task[aria-busy="true"] { opacity: .6; }
+.task--editing { display: block; }
+.edit-form { display: grid; gap: 8px; }
+.account { display: flex; align-items: center; gap: 10px; }
+.account__email { color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; }
+.banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--high); border-radius: 10px; padding: 10px 12px; }
+.loading { color: var(--muted); }
+.notice { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.auth { max-width: 420px; margin: 0 auto; padding: 48px 16px; }
+.auth__tagline { color: var(--muted); margin-top: -8px; }
+.auth__form { display: grid; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.auth__form h2 { margin: 0; font-size: 1.2rem; }
+.auth__form label { display: grid; gap: 4px; font-weight: 600; font-size: .9rem; }
+.auth__switch, .hint { margin: 0; font-size: .9rem; color: var(--muted); }
+.demo { margin-top: 20px; color: var(--muted); font-size: .9rem; }
+@media (max-width: 520px) {
+  .task { flex-wrap: wrap; }
+  .task__body { flex-basis: 100%; order: -1; }
+}
+.task-form__row input[aria-label="Assignee"] { flex: 0 1 150px; min-width: 0; }
