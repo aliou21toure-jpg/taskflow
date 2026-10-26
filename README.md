@@ -1,13 +1,13 @@
 # TaskFlow
 
 [![CI](https://github.com/aliou21toure-jpg/taskflow/actions/workflows/ci.yml/badge.svg)](https://github.com/aliou21toure-jpg/taskflow/actions/workflows/ci.yml)
-[![Live demo](https://img.shields.io/badge/live%20demo-taskflow--demo--tau.vercel.app-2f5bea)](https://taskflow-demo-tau.vercel.app)
+[![Live demo](https://img.shields.io/badge/live%20demo-taskflow.sadiatoure.dev-2f5bea)](https://taskflow.sadiatoure.dev)
 
 A full-stack task manager with user accounts: a **TypeScript + Express REST API** on
 **PostgreSQL** and a **React** frontend. Every user signs in and sees only their own tasks.
 The API enforces this in every SQL query, and 89 automated tests check it.
 
-**[Try the live demo →](https://taskflow-demo-tau.vercel.app)** Create your own account, or
+**[Try the live demo →](https://taskflow.sadiatoure.dev)** Create your own account, or
 click *Try the demo account* on the sign-in screen.
 
 ![Signing up, adding and editing tasks, and signing out](docs/demo.gif)
